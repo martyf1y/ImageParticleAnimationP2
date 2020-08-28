@@ -20,82 +20,123 @@ Function Create New Array
 Function to know when animation has finished after certain amount of time
 */
 
-let classNames = "ImagesToAnimate";
-let imageFolder = "images";
+const domClassNames = "ImagesToAnimate";
+const imageFolder = "images/";
 
-let toAnimateImgArray = [];
-let pixelArray = [];
-let particle;
-
-let imgArrayIndex = 0;
-let stopAnimation = false;
-let posX = 0;
+let animation;
 
 function preload() {
-  reloadImages();
+  collectImages().catch((err) => console.error(err));
 }
 
 function setup() {
   createCanvas(500, 500);
-
-  // particle = {
-  //   x0: x,
-  //   y0: y,
-  //   x1: png.width / 2,
-  //   y1: png.height / 2,
-  //   color:
-  //     "rgb(" +
-  //     data.data[y * 4 * data.width + x * 4] +
-  //     "," +
-  //     data.data[y * 4 * data.width + x * 4 + 1] +
-  //     "," +
-  //     data.data[y * 4 * data.width + x * 4 + 2] +
-  //     ")",
-  //   speed: Math.random() * 4 + 2,
-  // };
+  // noLoop();
 }
 
-async function draw() {
-  background(0);
-  if (toAnimateImgArray != 0 && !stopAnimation) {
-    runAnimation(toAnimateImgArray[imgArrayIndex])
-      .then(() => {
-        stopAnimation = checkNextAnimation(false);
-      })
-      .catch((err) => console.error(err));
+function draw() {
+  //background(0);
+
+  if (animation != null && animation.animating) {
+    
+    animation.draw();
   }
 }
 
-function checkNextAnimation(loop) {
-  if (imgArrayIndex >= toAnimateImgArray.length - 1) {
-    imgArrayIndex = 0;
-    if (!loop) return true;
-  } else imgArrayIndex++;
-  return false;
+function addImagetoAnimation(img) {
+  if (animation == null) {
+    animation = new Animation(true);
+    console.log("Created new animation object!");
+    animation.addImage(img);
+    animation.start();
+  } else animation.addImage(img);
 }
 
-async function runAnimation(img) {
-  await animateImage(img);
-}
+class Animation {
+  constructor(loop) {
+    this.allImages = [];
+    this.index = 0;
+    this.loop = loop;
+    this.imagePixelSize = 10;
+    this.particles;
+    this.cImage; // current
+    this.animating = false;
+  }
 
-async function animateImage(img) {
-  return new Promise((resolve, reject) => {
-    img.loadPixels();
+  start() {
+    this.cImage = this.allImages[this.index];
+    this.animating = true;
+    animation.update();
+  }
+
+  addImage(img) {
+    this.allImages.push(img);
+    console.log("Added image to object! Num: " + this.allImages.length);
+    console.log(this.allImages[0].width);
+  }
+
+  checkNextImage() {
+    this.index++;
+    if (this.index >= this.allImages.length ) {
+      this.index = 0;
+      if (!this.loop) return false;
+    }
+    return true;
+  }
+
+  update() {
+    setInterval(() => {
+      this.animating = this.checkNextImage();
+      if (this.animating) {
+        this.cImage = this.allImages[this.index];
+        console.log("Next!");
+      }
+    }, 1000);
+  }
+
+  draw() {
+    let w = width / this.imagePixelSize;
 
     fill(255);
-    image(img, posX++, 0, height / (img.height / img.width), height);
-    if (posX >= 100) resolve(posX = 0);
-  });
+    image(
+      this.cImage,
+      0,
+      0,
+      height / (this.cImage.height / this.cImage.width),
+      height
+    );
+
+    // this.cImage.loadPixels();
+    // for (let x = 0; x < this.cImage.width; x++) {
+    //   for (let y = 0; y < this.cImage.height; y++) {
+    //     let i = (x + y * this.cImage.width) * 4;
+    //     let r = this.cImage.pixels[i + 0];
+    //     let g = this.cImage.pixels[i + 1];
+    //     let b = this.cImage.pixels[i + 2];
+
+    //     noStroke();
+    //     fill(r, g, b);
+    //     rect(x * w, y * w, w, w);
+    //   }
+    // }
+  }
 }
 
-// Go through each animation
-// In function
-// Try use image. If not run onto next img
-// for(int i =0; i < toAnimateImgList.length; i++){
-// targetPixelArray =   createTargetPixelArray(toAnimateImgList[i]);
-//    await pixelArray = runningAnimation(startPixelArray, targetPixelArray);
-// once it is complete i++;
-//}
+async function collectImages() {
+  // or toAnimateList = findImagesFromClass("ImagesToAnimate");
+  let imagePaths = await findImagesFromFolder(imageFolder);
+  loadImagesToAnimation(imagePaths);
+}
+
+function loadImagesToAnimation(paths) {
+  for (path of paths) {
+    loadImage(
+      path,
+      (result) => addImagetoAnimation(result),
+      (error) => console.error(error)
+    );
+  }
+}
 
 function findImagesFromFolder(folderName) {
   return new Promise((resolve, reject) => {
@@ -105,13 +146,13 @@ function findImagesFromFolder(folderName) {
     xhr.onload = () => {
       if (xhr.status === 200) {
         let elements = xhr.response.getElementsByTagName("a");
-        let imgArray = [];
+        let imageDir = [];
         for (x of elements) {
           if (x.href.match(/\.(jpe?g|png|gif)$/)) {
-            imgArray.push(loadImage(x.href));
+            imageDir.push(x.href);
           }
         }
-        resolve(imgArray);
+        resolve(imageDir);
       } else reject(Error("Could not reach folder. Check directory"));
     };
     xhr.send();
@@ -119,23 +160,47 @@ function findImagesFromFolder(folderName) {
 }
 
 // Refactor into highorder try catch statements
-function findImagesFromClass(classNames) {
-  let foundClasses = document.getElementsByClassName(classNames);
+function findImagesFromClass(domClassNames) {
+  let foundClasses = document.getElementsByClassName(domClassNames);
   if (foundClasses.length != 0) {
     console.log("Get Images");
-    let imgArray = [];
+    let images = [];
     for (thisClass of foundClasses) {
       let imgElement = thisClass.getElementsByTagName("img");
       if (imgElement.length != 0) {
-        imgElement.foreach((i) => imgArray.push(loadImage(i.src)));
+        imgElement.foreach((i) => images.push(loadImage(i.src)));
       } else console.log("No images in class");
     }
-    return imgArray;
-  } else console.log("No Classes");
+    return images;
+  } else console.error("No Classes");
   return null;
 }
 
-async function reloadImages() {
-  // or toAnimateList = findImagesFromClass("ImagesToAnimate");
-  toAnimateImgArray = await findImagesFromFolder(imageFolder);
+class Particle {
+  constructor(sourceImg) {
+    this.startImg = sourceImg;
+    this.pos = createVector(0, 0);
+    this.velocity = createVector(random(-1, 1), random(-1, -5));
+    this.alpha = 255;
+    this.col = createVector(random(256), random(256), random(256));
+
+    // To do - make previous pixel association be random with new ones
+    // previous pixel color and place -> new pixel color and place
+    // Then add movement
+  }
+
+  finished() {
+    return this.alpha <= 0;
+  }
+
+  update() {
+    this.pos.add(this.velocity);
+    this.alpha -= 1;
+  }
+
+  show() {
+    noStroke();
+    fill(this.col.x, this.col.y, this.col.z, this.alpha);
+    ellipse(this.pos.x, this.pos.y, 15);
+  }
 }
