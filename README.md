@@ -4,6 +4,8 @@ Matthew Martin - Creative Matterz
 Based on:
 https://codepen.io/vinsongrant/details/MKwebd
 
+The bird images do not belong to me and are just for test purposes.
+
 What it does
 - Create promise to locate images in the animation class or images folder of app
 - If useable images create animation object with images array
