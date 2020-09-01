@@ -13,13 +13,15 @@
   </style>
   <script src="p5.js"></script>
   <script src="p5.sound.min.js"></script>
+  <script src="particle.js"></script>
+  <script src="animation.js"></script>
   <script src="sketch.js"></script>
 </head>
 
 <body>
-  <button onclick="draw()">Run</button>
+  <button onclick="if(animation!=null)animation.start()">Run</button>
 
-<!-- <div class="ImagesToAnimate">
+  <!-- <div class="ImagesToAnimate">
    <img src="images/blackBird.jpg" style="height:128px;"> 
   </div>
   <div class="ImagesToAnimate">
