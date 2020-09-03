@@ -1,9 +1,8 @@
-
-
 const domClassNames = "ImagesToAnimate";
-const imageFolder = "images/";
+const imageFolder = "images";
 
 let animation;
+let imgBasket = [];
 let loopAnimation = false;
 let tempTransitionInterval;
 
@@ -13,6 +12,9 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  animation = new Animation(loopAnimation);
+  console.log("Animation created");
+  animation.addImagesfromBasket(imgBasket);
 }
 
 function draw() {
@@ -25,17 +27,17 @@ function draw() {
 // --------------------- Collect Images --------------------- //
 
 async function collectImages() {
-  // or toAnimateList = findImagesFromClass("ImagesToAnimate");
-  let imagePaths = await findImagesFromFolder(imageFolder);
-  loadImagesToAnimation(imagePaths);
+  let imgPaths = findImagesFromClass(domClassNames);
+  // let imagePaths = await findImagesFromFolder(imageFolder);
+  loadImagesToBasket(imgPaths);
 }
 
-function loadImagesToAnimation(paths) {
-  if (animation == null) animation = new Animation(loopAnimation);
+function loadImagesToBasket(paths) {
+  imgBasket.splice(0, imgBasket.length);
   paths.forEach((p) =>
     loadImage(
       p,
-      (res) => animation.addImage(res),
+      (res) => imgBasket.push(res),
       (err) => console.error(err)
     )
   );
@@ -50,7 +52,7 @@ function findImagesFromFolder(folderName) {
       if (xhr.status === 200) {
         let elements = xhr.response.getElementsByTagName("a");
         let imageDir = [];
-        for (x of elements) {
+        for (const x of elements) {
           if (x.href.match(/\.(jpe?g|png|gif)$/)) imageDir.push(x.href);
         }
         if (imageDir != 0) resolve(imageDir);
@@ -64,14 +66,15 @@ function findImagesFromFolder(folderName) {
 function findImagesFromClass(domClassNames) {
   let foundClasses = document.getElementsByClassName(domClassNames);
   if (foundClasses.length != 0) {
-    let images = [];
-    for (thisClass of foundClasses) {
-      let imgElement = thisClass.getElementsByTagName("img");
-      if (imgElement.length != 0)
-        imgElement.foreach((i) => images.push(loadImage(i.src)));
+    let imageDir = [];
+    for (const thisClass of foundClasses) {
+      let elements = thisClass.getElementsByTagName("img");
+      if (elements.length != 0)
+        Array.prototype.forEach.call(elements, (x) => imageDir.push(x.src));
       else console.log("No images in class");
     }
-    return images;
-  } else console.error("No Classes");
+    if (imageDir != 0) return imageDir;
+    else console.error("No Images in DOM class");
+  } else console.error("Could not reach the class in DOM");
   return null;
 }

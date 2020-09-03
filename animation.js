@@ -11,11 +11,11 @@ class Animation {
   start() {
     this.animating = true;
     animation.resetParticles();
-    animation.update();
+     animation.update();
   }
 
-  addImage(img) {
-    this.allImages.push(img);
+  addImagesfromBasket(basket) {
+    this.allImages = basket;
   }
 
   createParticleArray(w, h) {
