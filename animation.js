@@ -1,21 +1,24 @@
 class Animation {
-  constructor(isLoop) {
+  constructor(isLoop, aWidth, aHeight) {
     this.allImages = [];
     this.index = 0;
     this.loop = isLoop;
-    this.pSize = Math.ceil(width * 0.01);
+    this.pSize = Math.ceil(aWidth * 0.01);
     this.particles = [];
     this.animating = false;
+    this.tempTransitionInterval;
+    this.aWidth = aWidth;
+    this.aHeight = aHeight;  
   }
 
   start() {
+    this.resetParticles();
     this.animating = true;
-    animation.resetParticles();
-     animation.update();
+    this.checkFinish(); // This will be removed from here and left in main draw
   }
 
-  addImagesfromBasket(basket) {
-    this.allImages = basket;
+  addImagesfromBasket(images) {
+    this.allImages = images;
   }
 
   createParticleArray(w, h) {
@@ -29,8 +32,8 @@ class Animation {
 
   resetParticles() {
     let nImg = this.allImages[this.index];
-    let particleW = Math.ceil(width / this.pSize);
-    let particleH = Math.ceil(height / this.pSize);
+    let particleW = Math.ceil(this.aWidth / this.pSize);
+    let particleH = Math.ceil(this.aHeight / this.pSize);
 
     if (this.particles.length == 0)
       this.createParticleArray(particleW, particleH);
@@ -86,13 +89,13 @@ class Animation {
     });
   }
 
-  update() {
-    tempTransitionInterval = setInterval(() => {
+  checkFinish() {
+    this.tempTransitionInterval = setInterval(() => {
       this.animating = this.checkNextImage();
       if (this.animating) {
         this.resetParticles();
       } else {
-        clearInterval(tempTransitionInterval);
+        clearInterval(this.tempTransitionInterval);
         console.log("----- No more animating -----");
       }
     }, 3000);

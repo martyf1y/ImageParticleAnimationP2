@@ -1,46 +1,72 @@
 const domClassNames = "ImagesToAnimate";
-const imageFolder = "images";
+const folderPath = "images";
 
 let animation;
-let imgBasket = [];
 let loopAnimation = false;
-let tempTransitionInterval;
 
-function preload() {
-  collectImages().catch((err) => console.error(err));
-}
+function preload() {}
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-  animation = new Animation(loopAnimation);
+  createCanvas(500, 500);
+
+  animation = new Animation(loopAnimation, width, height);
   console.log("Animation created");
-  animation.addImagesfromBasket(imgBasket);
+
+  collectImages("FOLDER", folderPath)
+    .then((result) => addImages(result).then(animation.start()))
+    .catch((err) => console.error(err));
 }
 
 function draw() {
-  background(255);
+  background(125);
   if (animation != null && animation.animating) {
     animation.animateParticles();
+    // animation.checkFinish();
   }
+}
+
+async function addImages(imgBasket) {
+  animation.addImagesfromBasket(imgBasket);
 }
 
 // --------------------- Collect Images --------------------- //
 
-async function collectImages() {
-  let imgPaths = findImagesFromClass(domClassNames);
-  // let imagePaths = await findImagesFromFolder(imageFolder);
-  loadImagesToBasket(imgPaths);
+async function collectImages(search, path) {
+  let imgPaths;
+  switch (search) {
+    case "DOMCLASS":
+      imgPaths = findImagesFromClass(path);
+      break;
+    case "FOLDER":
+      imgPaths = await findImagesFromFolder(path);
+      break;
+    default:
+      imgPaths = await findImagesFromFolder(path);
+  }
+  let iB = await loadImagesFromPaths(imgPaths);
+  return iB;
 }
 
-function loadImagesToBasket(paths) {
-  imgBasket.splice(0, imgBasket.length);
-  paths.forEach((p) =>
-    loadImage(
-      p,
-      (res) => imgBasket.push(res),
-      (err) => console.error(err)
-    )
-  );
+function loadImagesFromPaths(paths) {
+  return new Promise((resolve) => {
+    let imgArray = [];
+    let loadImgT = 0;
+    paths.forEach((p) => {
+      loadImage(
+        p,
+        (res) => {
+          console.log("Loaded image");
+          imgArray.push(res);
+          loadImgT++;
+          if (loadImgT == paths.length) resolve(imgArray);
+        },
+        (err) => {
+          console.error("IMAGE NOT LOADED" + err);
+          loadImgT++;
+        }
+      );
+    });
+  });
 }
 
 function findImagesFromFolder(folderName) {
