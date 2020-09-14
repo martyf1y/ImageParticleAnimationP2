@@ -3,6 +3,10 @@ const folderPath = "images";
 
 let animation;
 let loopAnimation = false;
+let sizeSlider;
+let spaceSlider;
+let sizeText;
+let spacingText;
 
 function preload() {}
 
@@ -15,13 +19,38 @@ function setup() {
   collectImages("FOLDER", folderPath)
     .then((result) => addImages(result).then(animation.start()))
     .catch((err) => console.error(err));
+
+  sizeSlider = createSlider(1, width/5, animation.pSize);
+  sizeSlider.position(10, height);
+  sizeSlider.style("width", "200px");
+  sizeSlider.input(updateParticles);
+
+  spaceSlider = createSlider(0, 50, animation.pSpacing);
+  spaceSlider.position(230, height);
+  spaceSlider.style("width", "200px");
+  spaceSlider.input(updateParticles);
+
+  spacingText = createP("Spacing: " + animation.pSpacing);
+    sizeText = createP("Size: " + animation.pSize);
+
 }
 
 function draw() {
   background(125);
+
   if (animation != null && animation.animating) {
     animation.animateParticles();
     // animation.checkFinish();
+  }
+}
+
+function updateParticles() {
+  if (animation != null) {
+    animation.pSize = sizeSlider.value();
+    animation.pSpacing = spaceSlider.value();
+    animation.resetParticles();
+    spacingText.html("Spacing: " +  animation.pSpacing);
+    sizeText.html("Size: " + animation.pSize);
   }
 }
 

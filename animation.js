@@ -1,14 +1,15 @@
 class Animation {
-  constructor(isLoop, aWidth, aHeight) {
+  constructor(isLoop, canvasW, canvasH) {
     this.allImages = [];
     this.index = 0;
     this.loop = isLoop;
-    this.pSize = Math.ceil(aWidth * 0.01);
+    this.pSpacing = 5;
+    this.pSize = Math.ceil(canvasW * 0.07) / this.pSpacing;
     this.particles = [];
     this.animating = false;
     this.tempTransitionInterval;
-    this.aWidth = aWidth;
-    this.aHeight = aHeight;  
+    this.canvasW = canvasW;
+    this.canvasH = canvasH;
   }
 
   start() {
@@ -21,52 +22,61 @@ class Animation {
     this.allImages = images;
   }
 
-  createParticleArray(w, h) {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        this.particles.push(new Particle(this.pSize));
-      }
-    }
-    console.log(this.particles.length + " particles created.");
+  createParticleArray(tWide, tHigh) {
+    let newParticles = [];
+    for (let i = 0; i < tWide * tHigh; i++)
+      newParticles.push(
+        new Particle(this.pSize, this.canvasW / 2, this.canvasH / 2)
+      );
+    console.log(newParticles.length + " particles created.");
+    return newParticles;
   }
 
   resetParticles() {
-    let nImg = this.allImages[this.index];
-    let particleW = Math.ceil(this.aWidth / this.pSize);
-    let particleH = Math.ceil(this.aHeight / this.pSize);
+    let nImg = this.allImages[this.index].get();
+    let pSlotSize = this.pSize + this.pSpacing;
+    let totalPWide = Math.floor(this.canvasW / pSlotSize);
+    let totalPHigh = Math.floor(this.canvasH / pSlotSize);
 
-    if (this.particles.length == 0)
-      this.createParticleArray(particleW, particleH);
+    /// if (this.particles.length != totalPWide * totalPHigh)
+    this.particles = [];
+    this.particles = this.createParticleArray(totalPWide, totalPHigh);
 
     console.log("---- NEXT IMAGE ----");
     console.log(nImg);
 
-    console.log("Canvas Width " + particleW);
-    console.log("Canvas Height " + particleH);
+    console.log("Canvas Width " + this.canvasW);
+    console.log("Canvas Height " + this.canvasH);
 
     console.log("Image Width " + nImg.width);
     console.log("Image Height " + nImg.height);
 
-    if (nImg.width > particleW) nImg.resize(particleW, 0);
-    if (nImg.height > particleH) nImg.resize(0, particleH);
+    // Image only needs to be as big as particle count
+    if (nImg.width > totalPWide) nImg.resize(totalPWide, 0);
+    if (nImg.height > totalPHigh) nImg.resize(0, totalPHigh);
 
     console.log("Resized Width " + nImg.width);
     console.log("Resized Height " + nImg.height);
 
-    let colStart = Math.floor((particleW - nImg.width) / 2);
+    let colStart = Math.floor((totalPWide - nImg.width) / 2);
     let colEnd = colStart + nImg.width;
-    let rowStart = Math.floor((particleH - nImg.height) / 2);
+    let rowStart = Math.floor((totalPHigh - nImg.height) / 2);
     let rowEnd = rowStart + nImg.height;
 
     console.log("Columns area  " + colStart + " : " + colEnd);
     console.log("Rows area  " + rowStart + " : " + rowEnd);
 
-    let i = 0;
+    let particleIndex = 0;
     let pIndex = 0;
+    let centerAdjustW = (this.canvasW % pSlotSize) / 2;
+    centerAdjustW += this.pSpacing / 2;
+    let centerAdjustH = (this.canvasH % pSlotSize) / 2;
+    centerAdjustH += this.pSpacing / 2;
+
     nImg.loadPixels();
     this.particles.forEach((nParticle) => {
-      let column = Math.floor(i % particleW);
-      let row = Math.floor(i / particleW);
+      let column = Math.floor(particleIndex % totalPWide);
+      let row = Math.floor(particleIndex / totalPWide);
       if (
         column >= colStart &&
         column < colEnd &&
@@ -79,26 +89,38 @@ class Animation {
           nImg.pixels[pIndex + 2],
         ]);
         nParticle.alpha = nImg.pixels[pIndex + 3];
+        nParticle.alive = true;
+        nParticle.targetPos.set([
+          column * pSlotSize + centerAdjustW,
+          row * pSlotSize + centerAdjustH,
+        ]);
         pIndex += 4;
+        // nParticle.vel = nParticle
+        //   .easingF(nParticle.pos, nParticle.targetPos)
+        //   .mult(200);
       } else {
         nParticle.col.set([0, 0, 0]);
-        nParticle.alpha = 0;
+        nParticle.alpha = 255;
+        nParticle.alive = false;
       }
-      nParticle.pos.set([column * this.pSize, row * this.pSize]);
-      i += 1;
+      nParticle.pos.set([
+        column * pSlotSize + centerAdjustW,
+        row * pSlotSize + centerAdjustH,
+      ]);
+      particleIndex += 1;
     });
   }
 
   checkFinish() {
-    this.tempTransitionInterval = setInterval(() => {
-      this.animating = this.checkNextImage();
-      if (this.animating) {
-        this.resetParticles();
-      } else {
-        clearInterval(this.tempTransitionInterval);
-        console.log("----- No more animating -----");
-      }
-    }, 3000);
+    // this.tempTransitionInterval = setInterval(() => {
+    //   this.animating = this.checkNextImage();
+    //   if (this.animating) {
+    //     this.resetParticles();
+    //   } else {
+    //     clearInterval(this.tempTransitionInterval);
+    //     console.log("----- No more animating -----");
+    //   }
+    // }, 3000);
   }
 
   checkNextImage() {
@@ -111,9 +133,29 @@ class Animation {
   }
 
   animateParticles() {
-    animation.particles.forEach((p) => {
-      p.update();
-      p.show();
+    let totalFinished = 0;
+    let prevP = createVector(0, 0);
+    let totalActive = 0;
+    this.particles.forEach((p) => {
+      if (p.alive && (p.released || p.pos.dist(prevP) > 5)) {
+        totalActive++;
+        p.released = true;
+        if (p.update()) {
+          totalFinished++;
+          prevP = createVector(0, 0);
+        } else prevP = p.pos;
+        p.show();
+      } else return; // No point continuing if not all particles are out.
     });
+
+    // if (totalFinished == totalActive) {
+    //   this.animating = this.checkNextImage();
+    //   if (this.animating) {
+    //     this.resetParticles();
+    //   } else {
+    //     clearInterval(this.tempTransitionInterval);
+    //     console.log("----- No more animating -----");
+    //   }
+    // }
   }
 }
