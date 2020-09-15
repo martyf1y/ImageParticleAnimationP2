@@ -11,12 +11,13 @@ What it does
 - If useable images create animation object with images array
 - else return error message and do not make animation
 - Go through each image with particle array of rectangles that changes every interval
-
-Still to do
-
 - Have pixels begin from center
 - Give a target area for pixel to go
 - Create a type of elastic style movement
+
+Still to do
+
+- Do not create particle for no alpha pixels
 - Have pixel lerp colour
 - Create pixel complete check and when done stay for half a second
 

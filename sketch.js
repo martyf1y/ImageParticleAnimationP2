@@ -16,19 +16,19 @@ function setup() {
   animation = new Animation(loopAnimation, width, height);
   console.log("Animation created");
 
-  collectImages("FOLDER", folderPath)
+  collectImages("DOMCLASS", domClassNames)
     .then((result) => addImages(result).then(animation.start()))
     .catch((err) => console.error(err));
 
   sizeSlider = createSlider(1, width/5, animation.pSize);
   sizeSlider.position(10, height);
   sizeSlider.style("width", "200px");
-  sizeSlider.input(updateParticles);
+  sizeSlider.input(adjustParticles);
 
   spaceSlider = createSlider(0, 50, animation.pSpacing);
   spaceSlider.position(230, height);
   spaceSlider.style("width", "200px");
-  spaceSlider.input(updateParticles);
+  spaceSlider.input(adjustParticles);
 
   spacingText = createP("Spacing: " + animation.pSpacing);
     sizeText = createP("Size: " + animation.pSize);
@@ -39,12 +39,13 @@ function draw() {
   background(125);
 
   if (animation != null && animation.animating) {
-    animation.animateParticles();
+    animation.updateParticles();
+    animation.showParticles();
     // animation.checkFinish();
   }
 }
 
-function updateParticles() {
+function adjustParticles() {
   if (animation != null) {
     animation.pSize = sizeSlider.value();
     animation.pSpacing = spaceSlider.value();

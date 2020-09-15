@@ -3,19 +3,19 @@ class Animation {
     this.allImages = [];
     this.index = 0;
     this.loop = isLoop;
-    this.pSpacing = 5;
-    this.pSize = Math.ceil(canvasW * 0.07) / this.pSpacing;
+    this.pSpacing = 2;
+    this.pSize = 2;
     this.particles = [];
     this.animating = false;
-    this.tempTransitionInterval;
     this.canvasW = canvasW;
     this.canvasH = canvasH;
+    this.areaReleased = 0;
+    this.delayEndStart = false;
   }
 
   start() {
     this.resetParticles();
     this.animating = true;
-    this.checkFinish(); // This will be removed from here and left in main draw
   }
 
   addImagesfromBasket(images) {
@@ -37,34 +37,22 @@ class Animation {
     let pSlotSize = this.pSize + this.pSpacing;
     let totalPWide = Math.floor(this.canvasW / pSlotSize);
     let totalPHigh = Math.floor(this.canvasH / pSlotSize);
+    this.areaReleased = totalPHigh;
+    this.delayEndStart = false;
 
-    /// if (this.particles.length != totalPWide * totalPHigh)
     this.particles = [];
     this.particles = this.createParticleArray(totalPWide, totalPHigh);
 
     console.log("---- NEXT IMAGE ----");
-    console.log(nImg);
-
-    console.log("Canvas Width " + this.canvasW);
-    console.log("Canvas Height " + this.canvasH);
-
-    console.log("Image Width " + nImg.width);
-    console.log("Image Height " + nImg.height);
 
     // Image only needs to be as big as particle count
     if (nImg.width > totalPWide) nImg.resize(totalPWide, 0);
     if (nImg.height > totalPHigh) nImg.resize(0, totalPHigh);
 
-    console.log("Resized Width " + nImg.width);
-    console.log("Resized Height " + nImg.height);
-
     let colStart = Math.floor((totalPWide - nImg.width) / 2);
     let colEnd = colStart + nImg.width;
     let rowStart = Math.floor((totalPHigh - nImg.height) / 2);
     let rowEnd = rowStart + nImg.height;
-
-    console.log("Columns area  " + colStart + " : " + colEnd);
-    console.log("Rows area  " + rowStart + " : " + rowEnd);
 
     let particleIndex = 0;
     let pIndex = 0;
@@ -83,44 +71,48 @@ class Animation {
         row >= rowStart &&
         row < rowEnd
       ) {
-        nParticle.col.set([
-          nImg.pixels[pIndex],
-          nImg.pixels[pIndex + 1],
-          nImg.pixels[pIndex + 2],
-        ]);
-        nParticle.alpha = nImg.pixels[pIndex + 3];
-        nParticle.alive = true;
-        nParticle.targetPos.set([
-          column * pSlotSize + centerAdjustW,
-          row * pSlotSize + centerAdjustH,
-        ]);
+        if (nImg.pixels[pIndex + 3] > 0) {
+          nParticle.setColor(
+            nImg.pixels[pIndex],
+            nImg.pixels[pIndex + 1],
+            nImg.pixels[pIndex + 2],
+            nImg.pixels[pIndex + 3]
+          );
+          nParticle.alive = true;
+          nParticle.targetPos.set([
+            column * pSlotSize + centerAdjustW,
+            row * pSlotSize + centerAdjustH,
+          ]);
+          let initialForce = (nParticle.targetPos.y / this.canvasH - 0.5) * 10;
+          nParticle.vel.y = initialForce;
+        } else
+          nParticle.resetParticle(
+            column * pSlotSize + centerAdjustW,
+            row * pSlotSize + centerAdjustH
+          );
         pIndex += 4;
-        // nParticle.vel = nParticle
-        //   .easingF(nParticle.pos, nParticle.targetPos)
-        //   .mult(200);
       } else {
-        nParticle.col.set([0, 0, 0]);
-        nParticle.alpha = 255;
-        nParticle.alive = false;
+        nParticle.resetParticle(
+          column * pSlotSize + centerAdjustW,
+          row * pSlotSize + centerAdjustH
+        );
       }
-      nParticle.pos.set([
-        column * pSlotSize + centerAdjustW,
-        row * pSlotSize + centerAdjustH,
-      ]);
       particleIndex += 1;
     });
+    this.particles.sort(this.getFurthest);
   }
 
-  checkFinish() {
-    // this.tempTransitionInterval = setInterval(() => {
-    //   this.animating = this.checkNextImage();
-    //   if (this.animating) {
-    //     this.resetParticles();
-    //   } else {
-    //     clearInterval(this.tempTransitionInterval);
-    //     console.log("----- No more animating -----");
-    //   }
-    // }, 3000);
+  getFurthest(a, b) {
+    return b.pos.dist(b.targetPos) - a.pos.dist(a.targetPos);
+  }
+
+  endOfAnimCheck() {
+    this.animating = this.checkNextImage();
+    if (this.animating) {
+      this.resetParticles();
+    } else {
+      console.log("----- No more animating -----");
+    }
   }
 
   checkNextImage() {
@@ -132,30 +124,30 @@ class Animation {
     return true;
   }
 
-  animateParticles() {
-    let totalFinished = 0;
-    let prevP = createVector(0, 0);
-    let totalActive = 0;
+  updateParticles() {
+    let tAlive = 0;
+    let tReleaseNow = 0;
+    let aReleased = 0;
     this.particles.forEach((p) => {
-      if (p.alive && (p.released || p.pos.dist(prevP) > 5)) {
-        totalActive++;
-        p.released = true;
-        if (p.update()) {
-          totalFinished++;
-          prevP = createVector(0, 0);
-        } else prevP = p.pos;
-        p.show();
-      } else return; // No point continuing if not all particles are out.
+      if (p.alive) {
+        tAlive++;
+        if (p.released) {
+          p.goToTarget();
+          aReleased++;
+        } else if (tReleaseNow < 15 && aReleased < 800) {
+          //    p.pos.dist(p.targetPos) > this.areaReleased
+          p.released = true;
+          tReleaseNow++;
+        }
+      }
     });
+    if (tAlive == 0 && !this.delayEndStart) {
+      setTimeout(()=> {this.endOfAnimCheck()}, 2000);
+      this.delayEndStart = true;
+    }
+  }
 
-    // if (totalFinished == totalActive) {
-    //   this.animating = this.checkNextImage();
-    //   if (this.animating) {
-    //     this.resetParticles();
-    //   } else {
-    //     clearInterval(this.tempTransitionInterval);
-    //     console.log("----- No more animating -----");
-    //   }
-    // }
+  showParticles() {
+    this.particles.forEach((p) => p.released && p.show());
   }
 }

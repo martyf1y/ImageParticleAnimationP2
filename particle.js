@@ -3,45 +3,45 @@ class Particle {
     this.pos = createVector(startX, startY);
     this.targetPos = createVector();
     this.vel = createVector(0, 0);
-    this.acc = createVector(0, 0);
-    this.alpha = 255;
-    this.col = createVector(0, 0, 0);
+    this.color = { r: 0, g: 0, b: 0, a: 255 };
     this.size = sSize;
     this.released = false;
     this.alive = false;
   }
 
-  update() {
-    if (this.pos.dist(this.targetPos) > 1) {
-      // let tDirection = p5.Vector.sub(this.targetPos, this.pos);
-      // tDirection.normalize();
-      let ease = this.easingF(this.pos, this.targetPos);
-      this.applyForce(ease);
-      //  this.vel.add(this.easingF(this.pos, this.targetPos));
-      this.vel.add(this.acc);
+  goToTarget() {
+    let tDist = this.pos.dist(this.targetPos);
+    if (tDist > 1) {
+      let acc = p5.Vector.sub(this.targetPos, this.pos);
+      //acc.setMag(tDist);
+      this.vel.add(acc);
+      this.vel.limit(5);
+      this.vel.mult(0.98); // easing
       this.pos.add(this.vel);
-      this.acc.set(0, 0);
-      return false;
     } else {
       this.pos = this.targetPos;
-      return true;
+      this.alive = false;
     }
   }
 
-  applyForce(force) {
-    this.acc.add(force);
+  resetParticle(x, y) {
+    this.setColor(255, 0, 0, 255);
+    this.alive = false;
+    this.released = false;
+    this.pos.set([x, y]);
   }
 
-  easingF(pos, tPos) {
-    let direction = p5.Vector.sub(tPos, pos);
-    direction.normalize();
-    return p5.Vector.mult(direction, 0.01);
+  setColor(r, g, b, a) {
+    this.color.r = r;
+    this.color.g = g;
+    this.color.b = b;
+    this.color.a = a;
   }
 
   show() {
     noStroke();
     rectMode(CORNER);
-    fill(this.col.x, this.col.y, this.col.z, this.alpha);
+    fill(this.color.r, this.color.g, this.color.b, this.color.a);
     rect(this.pos.x, this.pos.y, this.size);
   }
 }
