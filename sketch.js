@@ -20,7 +20,7 @@ function setup() {
     .then((result) => addImages(result).then(animation.start()))
     .catch((err) => console.error(err));
 
-  sizeSlider = createSlider(1, width/5, animation.pSize);
+  sizeSlider = createSlider(1, width / 5, animation.pSize);
   sizeSlider.position(10, height);
   sizeSlider.style("width", "200px");
   sizeSlider.input(adjustParticles);
@@ -31,8 +31,7 @@ function setup() {
   spaceSlider.input(adjustParticles);
 
   spacingText = createP("Spacing: " + animation.pSpacing);
-    sizeText = createP("Size: " + animation.pSize);
-
+  sizeText = createP("Size: " + animation.pSize);
 }
 
 function draw() {
@@ -50,7 +49,7 @@ function adjustParticles() {
     animation.pSize = sizeSlider.value();
     animation.pSpacing = spaceSlider.value();
     animation.resetParticles();
-    spacingText.html("Spacing: " +  animation.pSpacing);
+    spacingText.html("Spacing: " + animation.pSpacing);
     sizeText.html("Size: " + animation.pSize);
   }
 }

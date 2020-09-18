@@ -32,6 +32,8 @@ class Animation {
     return newParticles;
   }
 
+
+  
   resetParticles() {
     let nImg = this.allImages[this.index].get();
     let pSlotSize = this.pSize + this.pSpacing;
@@ -72,7 +74,7 @@ class Animation {
         row < rowEnd
       ) {
         if (nImg.pixels[pIndex + 3] > 0) {
-          nParticle.setColor(
+          nParticle.setTargetColor(
             nImg.pixels[pIndex],
             nImg.pixels[pIndex + 1],
             nImg.pixels[pIndex + 2],
@@ -133,16 +135,20 @@ class Animation {
         tAlive++;
         if (p.released) {
           p.goToTarget();
+          p.goToColor();
           aReleased++;
         } else if (tReleaseNow < 15 && aReleased < 800) {
           //    p.pos.dist(p.targetPos) > this.areaReleased
           p.released = true;
           tReleaseNow++;
         }
+        p.alive = p.checkTargetReached();
       }
     });
     if (tAlive == 0 && !this.delayEndStart) {
-      setTimeout(()=> {this.endOfAnimCheck()}, 2000);
+      setTimeout(() => {
+        this.endOfAnimCheck();
+      }, 3000);
       this.delayEndStart = true;
     }
   }

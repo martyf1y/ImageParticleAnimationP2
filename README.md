@@ -21,8 +21,12 @@ What it does
 
 Still to do
 
+
 - Transition from one animation to next
+  - Have a new animation object
+  - transition all new points to that object
 - Give pixels new destination and colour
 - Have pixels lerp colour
 - If there are not enough pixels create more from center
 - If there are too many have them go to random empty spot and disappear
+- Upload to website and have it run there
