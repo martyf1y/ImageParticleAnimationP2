@@ -1,54 +1,74 @@
 class Particle {
   constructor(sSize, startX, startY) {
+    this.start = createVector(startX, startY);
     this.pos = createVector(startX, startY);
-    this.targetPos = createVector();
+    this.tPos = createVector(startX, startY);
+    this.sDist = 0;
     this.vel = createVector(0, 0);
+
     // this.color = { r: 0, g: 0, b: 0, a: 255 };
     // this.targetColor = { r: 0, g: 0, b: 0, a: 0 };
-    this.color = color(125, 125, 125, 255);
-    this.targetColor = color(0, 0, 0, 255);
+    this.color = color(125, 125, 125, 0);
+    this.sColor = color(255, 0, 0, 255);
+    this.tColor = color(255, 0, 0, 255);
     this.size = sSize;
-    this.released = false;
-    this.alive = false;
+    this.visible = false;
+    this.targetReached = false;
+  }
+
+  getDistance() {
+    return this.pos.dist(this.tPos);
+  }
+
+  checkTargetReached(dist) {
+    if (dist < 1) {
+      this.pos.set(this.tPos);
+      this.color = color(this.tColor);
+      let alpha = this.color.levels[3];
+      if (alpha <= 0) {
+        this.resetParticle();
+      }
+      return true;
+    }
+    return false;
   }
 
   goToTarget() {
-    let tDist = this.pos.dist(this.targetPos);
-    if (tDist > 1) {
-      let acc = p5.Vector.sub(this.targetPos, this.pos);
-      //acc.setMag(tDist);
-      this.vel.add(acc);
-      this.vel.limit(5);
-      this.vel.mult(0.98); // easing
-      this.pos.add(this.vel);
-    } else this.pos = this.targetPos;
+    let acc = p5.Vector.sub(this.tPos, this.pos);
+    //acc.setMag(dist);
+    this.vel.add(acc);
+    this.vel.limit(5);
+    this.vel.mult(0.98); // easing
+    this.pos.add(this.vel);
   }
 
-  checkTargetReached() {
-    if (
-      this.pos == this.targetPos &&
-      this.color.toString() == this.targetColor.toString()
-    )
-      return false;
-    return true;
+  updateColor(place) {
+    let change = map(place, this.sDist, 0, 0, 1);
+    this.color = lerpColor(this.sColor, this.tColor, change);
   }
 
-  goToColor() {
-    this.color = lerpColor(this.color, this.targetColor, 0.95);
-  }
-
-  resetParticle(x, y) {
-    this.setTargetColor(125, 125, 125, 0);
-    this.alive = false;
-    this.released = false;
-    this.pos.set([x, y]);
+  resetParticle() {
+   // console.log("Reset?");
+    this.pos.set(this.start);
+    this.tPos.set(this.start);
+    this.vel.set(0, 0);
+    this.color = color(125, 125, 125, 0);
+    this.sColor = color(255, 0, 0, 255);
+    this.tColor = color(255, 0, 0, 255);
+    //this.visible = false;
   }
 
   setTargetColor(r, g, b, a) {
-    this.targetColor.setRed(r);
-    this.targetColor.setGreen(g);
-    this.targetColor.setBlue(b);
-    this.targetColor.setAlpha(a);
+    this.tColor = color(r,g,b,a);
+    // this.tColor.setRed(r);
+    // this.tColor.setGreen(g);
+    // this.tColor.setBlue(b);
+    // this.tColor.setAlpha(a);
+  }
+
+  setTargetPos(x, y) {
+    this.tPos.set(x, y);
+    this.targetReached = false;
   }
 
   show() {
