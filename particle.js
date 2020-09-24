@@ -45,14 +45,13 @@ class Particle {
   }
 
   resetParticle() {
-    // console.log("Reset?");
     this.pos.set(this.start);
     this.tPos.set(this.start);
     this.vel.set(0, 0);
     this.color = color(125, 125, 125, 0);
     this.sColor = color(255, 0, 0, 255);
     this.tColor = color(255, 0, 0, 255);
-    //this.visible = false;
+    this.visible = false;
   }
   setColorFromImg(img, i) {
     this.setTargetColor(
@@ -64,10 +63,6 @@ class Particle {
   }
   setTargetColor(r, g, b, a) {
     this.tColor = color(r, g, b, a);
-    // this.tColor.setRed(r);
-    // this.tColor.setGreen(g);
-    // this.tColor.setBlue(b);
-    // this.tColor.setAlpha(a);
   }
 
   setTargetPos(x, y) {
