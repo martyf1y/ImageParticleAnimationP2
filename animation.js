@@ -16,8 +16,6 @@ class Animation {
     this.pSlotSize;
     this.pTotalWide;
     this.pTotalHigh;
-
-    this.pMovingAtOnce = 15;
   }
 
   start() {
@@ -58,18 +56,22 @@ class Animation {
     return array;
   }
 
+  insideArea(x, y, x1, x2, y1, y2) {
+    return x >= x1 && x < x2 && y >= y1 && y < y2;
+  }
+
   resetTargets() {
     console.log("---- NEXT IMAGE ----");
-    const nImg = this.allImages[this.imgI].get();
-    console.log("Image size " + nImg.width + " " + nImg.height);
+    const img = this.allImages[this.imgI].get();
+    console.log("Image size " + img.width + " " + img.height);
     // Image only needs to be as big as particle count
-    if (nImg.width > this.pTotalWide) nImg.resize(this.pTotalWide, 0);
-    if (nImg.height > this.pTotalHigh) nImg.resize(0, this.pTotalHigh);
+    if (img.width > this.pTotalWide) img.resize(this.pTotalWide, 0);
+    if (img.height > this.pTotalHigh) img.resize(0, this.pTotalHigh);
 
-    const cStart = Math.floor((this.pTotalWide - nImg.width) / 2);
-    const cEnd = cStart + nImg.width;
-    const rStart = Math.floor((this.pTotalHigh - nImg.height) / 2);
-    const rEnd = rStart + nImg.height;
+    const cStart = Math.floor((this.pTotalWide - img.width) / 2);
+    const cEnd = cStart + img.width;
+    const rStart = Math.floor((this.pTotalHigh - img.height) / 2);
+    const rEnd = rStart + img.height;
 
     const sSize = this.pSlotSize;
     const centerAdjW = ((this.width % sSize) + this.pSpacing) * 0.5;
@@ -78,49 +80,36 @@ class Animation {
     // Randommise particles array
     this.particles = this.shuffleArray(this.particles);
 
-    nImg.loadPixels();
+    img.loadPixels();
     let pIndex = 0;
     let pixI = 0;
     this.particles.forEach((nParticle) => {
       nParticle.atTarget = false;
       const col = Math.floor(pIndex % this.pTotalWide);
       const row = Math.floor(pIndex / this.pTotalWide);
-      const insideImg =
-        col >= cStart && col < cEnd && row >= rStart && row < rEnd;
-      //  console.log(nImg.pixels[pixI + 2]);
-      if (nParticle.visible || (insideImg && nImg.pixels[pixI + 3] > 0)) {
+      const insideImg = this.insideArea(col, row, cStart, cEnd, rStart, rEnd);
+      const pixHasAlpha = img.pixels[pixI + 3] > 0;
+      // Set target Pos
+      if (nParticle.visible || (insideImg && pixHasAlpha))
         nParticle.setTargetPos(
           col * sSize + centerAdjW,
           row * sSize + centerAdjH
         );
-      }
+      // Set target colour
+      if (insideImg && pixHasAlpha) nParticle.setColorFromImg(img, pixI);
+      else nParticle.setTargetColor(125, 125, 125, 0);
+      // Set start velocity
+      if (!nParticle.visible)
+        nParticle.vel.set(0, (nParticle.tPos.y / this.height - 0.5) * 15);
 
-      if (insideImg && nImg.pixels[pixI + 3] > 0) {
-        nParticle.setTargetColor(
-          nImg.pixels[pixI],
-          nImg.pixels[pixI + 1],
-          nImg.pixels[pixI + 2],
-          nImg.pixels[pixI + 3]
-        );
-      } else {
-        nParticle.setTargetColor(125, 125, 125, 0);
-      }
-
-      if (!nParticle.visible) {
-        nParticle.vel.y = (nParticle.tPos.y / this.height - 0.5) * 15;
-        nParticle.vel.x = 0;
-      }
-      if (insideImg) {
-        pixI += 4;
-      }
-
-      nParticle.sDist = nParticle.getDistance();
+      nParticle.sDist = nParticle.getDist();
       nParticle.sColor = color(nParticle.color);
+      if (insideImg) pixI += 4;
       pIndex += 1;
     });
-   // this.particles.sort(this.getFurthest);
+
+    // this.particles.sort(this.getFurthest);
     this.delayEnd = false;
-    this.pMovingAtOnce = 15;
   }
 
   getFurthest(a, b) {
@@ -143,36 +132,31 @@ class Animation {
     return true;
   }
 
-  updateParticles() {
-    let tNotAtTarget = 0;
-    let tShowNow = 0;
-    let tMoving = 0;
-    if (!this.delayEnd) {
-      this.particles.forEach((p) => {
-        let dist = p.getDistance();
-        if (!p.targetReached) {
-          tNotAtTarget++;
-          if (p.visible && tMoving < this.pMovingAtOnce) {
-            p.goToTarget(dist);
-            p.updateColor(dist);
-            p.targetReached = p.checkTargetReached(dist);
-            tMoving++;
-          } else if (tShowNow < 15) {
-            p.visible = true;
-            tShowNow++;
-          }
-        }
-        if (this.pMovingAtOnce < 1000) {this.pMovingAtOnce++;}
-      });
-
-      if (tNotAtTarget == 0) {
-        console.log("Anim complete");
-        setTimeout(() => {
-          this.endOfAnimCheck();
-        }, 2000);
-        this.delayEnd = true;
-      }
+  checkFinish(pleft) {
+    if (pleft == 0 && !this.delayEnd) {
+      console.log("Animation complete");
+      setTimeout(() => {
+        this.endOfAnimCheck();
+      }, 2000);
+      this.delayEnd = true;
     }
+  }
+
+  updateParticles() {
+    let tShowNow = 0;
+    let pNotAtTarget = 0;
+    this.particles.forEach((p) => {
+      if (!p.targetReached) pNotAtTarget++;
+      else return;
+
+      if (p.visible && pNotAtTarget < 1000) p.update();
+      else if (tShowNow < 15) {
+        p.visible = true;
+        tShowNow++;
+      }
+    });
+
+    this.checkFinish(pNotAtTarget);
   }
 
   showParticles() {
