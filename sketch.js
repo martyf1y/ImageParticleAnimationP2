@@ -69,19 +69,20 @@ async function collectImages(search, path) {
 function loadImagesFromPaths(paths) {
   return new Promise((resolve) => {
     let imgArray = [];
-    let loadImgT = 0;
+    let i = 0;
     paths.forEach((p) => {
       loadImage(
         p,
         (res) => {
           console.log("Loaded image");
           imgArray.push(res);
-          loadImgT++;
-          if (loadImgT == paths.length) resolve(imgArray);
+          i++;
+          if (i == paths.length) resolve(imgArray);
         },
         (err) => {
           console.error("IMAGE NOT LOADED" + err);
-          loadImgT++;
+          i++;
+          if (i == paths.length) resolve(imgArray);
         }
       );
     });

@@ -7,35 +7,37 @@ class Particle {
     this.vel = createVector(0, 0);
 
     this.color = color(125, 125, 125, 0);
-    this.sColor = color(255, 0, 0, 255);
-    this.tColor = color(255, 0, 0, 255);
+    this.sColor = color(125, 125, 125, 0);
+    this.tColor = color(125, 125, 125, 0);
     this.size = sSize;
     this.visible = false;
-    this.targetReached = false;
+    this.targetReached = true;
+    this.speedLimit = 7;
   }
 
   getDist() {
-    return this.pos.dist(this.tPos);
+    let result = this.pos.dist(this.tPos);
+    return result;
   }
 
   checkTargetReached(dist) {
     if (dist < 1) {
-      this.pos.set(this.tPos);
-      this.color = color(this.tColor);
-      let alpha = this.color.levels[3];
-      if (alpha <= 0) {
-        this.resetParticle();
-      }
       this.targetReached = true;
+      this.pos.set(this.tPos);
+      this.sColor = color(this.tColor);
+      let alpha = this.tColor.levels[3];
+      if (alpha <= 0) this.resetParticle();
     }
   }
 
   goToTarget() {
     let acc = p5.Vector.sub(this.tPos, this.pos);
-    //acc.setMag(dist);
+    acc.set(acc.x * 0.5, acc.y);
+    //acc.setMag(5);
+    // acc.mult(0.97);
     this.vel.add(acc);
-    this.vel.limit(5);
-    this.vel.mult(0.98); // easing
+    this.vel.limit(this.speedLimit);
+    this.vel.mult(0.94); // easing
     this.pos.add(this.vel);
   }
 
@@ -44,13 +46,19 @@ class Particle {
     this.color = lerpColor(this.sColor, this.tColor, change);
   }
 
+  disappear(areaW, areaH) {
+    this.setTargetPos(Math.random() * areaW, Math.random() * areaH);
+    this.tColor.setAlpha(0);
+  }
+
   resetParticle() {
     this.pos.set(this.start);
     this.tPos.set(this.start);
     this.vel.set(0, 0);
+    this.sDist = 0;
     this.color = color(125, 125, 125, 0);
-    this.sColor = color(255, 0, 0, 255);
-    this.tColor = color(255, 0, 0, 255);
+    this.sColor = color(125, 125, 125, 0);
+    this.tColor = color(125, 125, 125, 0);
     this.visible = false;
   }
   setColorFromImg(img, i) {
@@ -80,6 +88,6 @@ class Particle {
     noStroke();
     rectMode(CORNER);
     fill(this.color);
-    rect(this.pos.x, this.pos.y, this.size);
+    square(this.pos.x, this.pos.y, this.size);
   }
 }
