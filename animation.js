@@ -13,8 +13,8 @@ class Animation {
     this.endAnimation = false;
 
     this.particles = [];
-    this.pSpacing = 5;
-    this.pSize = 5;
+    this.pSpacing = 3;
+    this.pSize = 4;
     this.pSlotSize;
     this.pTotalWide;
     this.pTotalHigh;
@@ -84,7 +84,7 @@ class Animation {
         }
 
         if (pixHasAlpha) p.setColorFromImg(img, pixI);
-        else p.setTargetColor(125, 125, 125, 0);
+        else p.setTargetColor(255, 255, 255, 0);
 
         if (!p.visible) p.vel.y = (p.tPos.y / this.height - 0.5) * 15;
       } else if (p.visible) p.disappear(this.width, this.height);

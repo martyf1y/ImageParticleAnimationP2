@@ -6,9 +6,9 @@ class Particle {
     this.sDist = 0;
     this.vel = createVector(0, 0);
 
-    this.color = color(125, 125, 125, 0);
-    this.sColor = color(125, 125, 125, 0);
-    this.tColor = color(125, 125, 125, 0);
+    this.color = color(255, 255, 255, 0);
+    this.sColor = color(255, 255, 255, 0);
+    this.tColor = color(255, 255, 255, 0);
     this.size = sSize;
     this.visible = false;
     this.targetReached = true;
@@ -56,9 +56,9 @@ class Particle {
     this.tPos.set(this.start);
     this.vel.set(0, 0);
     this.sDist = 0;
-    this.color = color(125, 125, 125, 0);
-    this.sColor = color(125, 125, 125, 0);
-    this.tColor = color(125, 125, 125, 0);
+    this.color = color(255, 255, 255, 0);
+    this.sColor = color(255, 255, 255, 0);
+    this.tColor = color(255, 255, 255, 0);
     this.visible = false;
   }
   setColorFromImg(img, i) {

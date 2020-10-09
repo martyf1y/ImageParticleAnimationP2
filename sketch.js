@@ -3,12 +3,12 @@ const folderPath = "images";
 
 let animation;
 let loopAnimation = false;
-let sizeSlider, sizeText;
-let spaceSlider, spacingText;
+let sizeSlider, textInfo;
+let spaceSlider;
 let button;
 
 function setup() {
-  createCanvas(500, 500);
+  createCanvas(window.innerWidth/2, window.innerHeight/2);
 
   animation = new Animation(loopAnimation, width, height);
   console.log("Animation Created");
@@ -19,10 +19,11 @@ function setup() {
 
   sizeSlider = createParticleSlider(10, 1, width / 5, animation.pSize);
   spaceSlider = createParticleSlider(230, 0, 50, animation.pSpacing);
-  spacingText = createP(" Spacing: " + animation.pSpacing);
-  sizeText = createP(" Size: " + animation.pSize);
+  textInfo = createP(
+    " Spacing: " + animation.pSpacing + "   Size: " + animation.pSize
+  );
   button = createButton("Run");
-  button.position(5, height + spacingText.height * 5);
+  button.position(10, height + textInfo.height * 3);
   button.mousePressed(runAgain);
 }
 
@@ -31,7 +32,7 @@ function runAgain() {
 }
 
 function draw() {
-  background(199, 21, 133);
+  background(220);
   if (animation != null && animation.animating) {
     animation.update();
     animation.show();
@@ -43,8 +44,9 @@ function adjustAnimation() {
     animation.pSize = sizeSlider.value();
     animation.pSpacing = spaceSlider.value();
     animation.resetParticles();
-    spacingText.html("Spacing: " + animation.pSpacing);
-    sizeText.html("Size: " + animation.pSize);
+    textInfo.html(
+      " Spacing: " + animation.pSpacing + "   Size: " + animation.pSize
+    );
   }
 }
 
@@ -131,7 +133,7 @@ function findImagesFromClass(domClassNames) {
 // --------------------- Slider --------------------- //
 function createParticleSlider(posX, s, e, d) {
   let slider = createSlider(s, e, d);
-  slider.position(posX, height);
+  slider.position(posX, height + 5);
   slider.style("width", "200px");
   slider.input(adjustAnimation);
   return slider;
