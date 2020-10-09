@@ -13,7 +13,7 @@ function setup() {
   animation = new Animation(loopAnimation, width, height);
   console.log("Animation Created");
 
-  collectImages("FOLDER", folderPath)
+  collectImages("DOMCLASS", domClassNames)
     .then((result) => addImages(result).then(animation.start()))
     .catch((err) => console.error(err));
 
@@ -31,7 +31,7 @@ function runAgain() {
 }
 
 function draw() {
-  background(125);
+  background(199, 21, 133);
   if (animation != null && animation.animating) {
     animation.update();
     animation.show();
