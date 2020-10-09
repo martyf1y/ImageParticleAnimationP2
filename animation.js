@@ -8,8 +8,9 @@ class Animation {
 
     this.animating = false;
     this.loop = isLoop;
-    this.endAnimWait = false;
-    this.outroBegin = false;
+    this.transitioning = false;
+    this.pause;
+    this.endAnimation = false;
 
     this.particles = [];
     this.pSpacing = 5;
@@ -17,13 +18,19 @@ class Animation {
     this.pSlotSize;
     this.pTotalWide;
     this.pTotalHigh;
-
-    this.moveProgress = 0;
   }
 
   start() {
     this.resetParticles();
     this.animating = true;
+    console.log("Animation Started");
+  }
+
+  end() {
+    this.resetParticles();
+    this.endAnimation = false;
+    this.animating = false;
+    console.log("Animation Finished");
   }
 
   addImagesfromBasket(images) {
@@ -38,6 +45,8 @@ class Animation {
   }
 
   resetParticles() {
+    clearTimeout(this.pause);
+    this.transitioning = false;
     this.outroBegin = false;
     this.pSlotSize = this.pSize + this.pSpacing;
     this.pTotalWide = Math.floor(this.width / this.pSlotSize);
@@ -45,22 +54,6 @@ class Animation {
     this.particles = [];
     this.particles = this.createParticleArray(this.pTotalWide, this.pTotalHigh);
     this.resetTargets();
-  }
-
-  shuffleArray(array) {
-    for (let i = 0; i < array.length; i++) {
-      let rIndex = Math.floor(Math.random() * i);
-      let temp = array[i];
-      array[i] = array[rIndex];
-      array[rIndex] = temp;
-    }
-    return array;
-  }
-
-  resizeImg(i) {
-    if (i.width > this.pTotalWide) i.resize(this.pTotalWide, 0);
-    if (i.height > this.pTotalHigh) i.resize(0, this.pTotalHigh);
-    return i;
   }
 
   resetTargets() {
@@ -100,24 +93,11 @@ class Animation {
       i++;
     });
 
-    this.particles.sort(this.getFurthest);
-
-    this.resetTriggers();
+    this.particles.sort(this.visibleHighestOrder);
+    this.resetParticleUpdater();
   }
 
-  getFurthest(a, b) {
-    if (a.pos.y < b.pos.y && a.visible) {
-      return -1;
-    } else if (b.pos.y < a.pos.y && b.visible) {
-      return 1;
-    } else if (a.visible) return -1;
-    else if (b.visible) return 1;
-    else if (a.tPos.y < b.tPos.y) return -1;
-  }
-  // return b.pos.dist(b.tPos) - a.pos.dist(a.tPos);
-
-  resetTriggers() {
-    this.endAnimWait = false;
+  resetParticleUpdater() {
     this.allowedToMove = 0;
     let timer = setInterval(() => {
       if (this.allowedToMove < 1000) this.allowedToMove += 2;
@@ -125,42 +105,10 @@ class Animation {
     }, 5);
   }
 
-  outro() {
-    this.outroBegin = true;
-    this.particles.forEach((p) => {
-      if (p.visible) {
-        p.disappear(this.width, this.height);
-        p.sDist = p.getDist();
-        p.sColor = color(p.color);
-      }
-    });
-    this.resetTriggers();
-  }
-
-  endOfAnimCheck() {
-    if (this.checkNextImage()) this.resetTargets();
-    else this.outro();
-  }
-
-  checkNextImage() {
-    this.imgInd++;
-    if (this.imgInd >= this.imageArr.length) {
-      this.imgInd = 0;
-      if (!this.loop) return false;
-    }
-    return true;
-  }
-
-  checkFinish(pleft) {
-    if (pleft == 0 && !this.endAnimWait) {
-      console.log("Animation complete");
-      if (!this.outroBegin) {
-        setTimeout(() => {
-          this.endOfAnimCheck();
-        }, 2000);
-        this.endAnimWait = true;
-      } else this.animation = false;
-    }
+  update() {
+    let particlesComplete = this.updateParticles();
+    if (particlesComplete && this.endAnimation) this.end();
+    else if (particlesComplete && !this.transitioning) this.transition();
   }
 
   updateParticles() {
@@ -176,10 +124,66 @@ class Animation {
         tShowNow++;
       }
     });
-    this.checkFinish(pNotAtTarget);
+    return pNotAtTarget > 0 ? false : true;
   }
 
-  showParticles() {
+  show() {
     this.particles.forEach((p) => p.visible && p.show());
+  }
+
+  transition() {
+    this.transitioning = true;
+    this.pause = setTimeout(() => {
+      if (this.getNextImage()) this.resetTargets();
+      else this.startOutro();
+      this.transitioning = false;
+    }, 2000);
+  }
+
+  getNextImage() {
+    this.imgInd++;
+    if (this.imgInd >= this.imageArr.length) {
+      this.imgInd = 0;
+      if (!this.loop) return false;
+    }
+    return true;
+  }
+
+  startOutro() {
+    this.particles.forEach((p) => {
+      if (p.visible) {
+        p.disappear(this.width, this.height);
+        p.sDist = p.getDist();
+        p.sColor = color(p.color);
+      }
+    });
+    this.resetParticleUpdater();
+    this.endAnimation = true;
+  }
+
+  shuffleArray(array) {
+    for (let i = 0; i < array.length; i++) {
+      let rIndex = Math.floor(Math.random() * i);
+      let temp = array[i];
+      array[i] = array[rIndex];
+      array[rIndex] = temp;
+    }
+    return array;
+  }
+
+  visibleHighestOrder(a, b) {
+    if (a.pos.y < b.pos.y && a.visible) {
+      return -1;
+    } else if (b.pos.y < a.pos.y && b.visible) {
+      return 1;
+    } else if (a.visible) return -1;
+    else if (b.visible) return 1;
+    else if (a.tPos.y < b.tPos.y) return -1;
+  }
+
+  resizeImg(i) {
+    if (i.width > this.pTotalWide) i.resize(this.pTotalWide, 0);
+    if (i.height > this.pTotalHigh) i.resize(0, this.pTotalHigh);
+    return i;
   }
 }

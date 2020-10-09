@@ -3,38 +3,42 @@ const folderPath = "images";
 
 let animation;
 let loopAnimation = false;
-let sizeSlider;
-let spaceSlider;
-let sizeText;
-let spacingText;
-
-function preload() {}
+let sizeSlider, sizeText;
+let spaceSlider, spacingText;
+let button;
 
 function setup() {
   createCanvas(500, 500);
 
   animation = new Animation(loopAnimation, width, height);
-  console.log("Animation created");
+  console.log("Animation Created");
 
-  collectImages("DOMCLASS", domClassNames)
+  collectImages("FOLDER", folderPath)
     .then((result) => addImages(result).then(animation.start()))
     .catch((err) => console.error(err));
 
   sizeSlider = createParticleSlider(10, 1, width / 5, animation.pSize);
   spaceSlider = createParticleSlider(230, 0, 50, animation.pSpacing);
-  spacingText = createP("Spacing: " + animation.pSpacing);
-  sizeText = createP("Size: " + animation.pSize);
+  spacingText = createP(" Spacing: " + animation.pSpacing);
+  sizeText = createP(" Size: " + animation.pSize);
+  button = createButton("Run");
+  button.position(5, height + spacingText.height * 5);
+  button.mousePressed(runAgain);
+}
+
+function runAgain() {
+  animation.start();
 }
 
 function draw() {
   background(125);
   if (animation != null && animation.animating) {
-    animation.updateParticles();
-    animation.showParticles();
+    animation.update();
+    animation.show();
   }
 }
 
-function adjustParticles() {
+function adjustAnimation() {
   if (animation != null) {
     animation.pSize = sizeSlider.value();
     animation.pSpacing = spaceSlider.value();
@@ -49,7 +53,6 @@ async function addImages(imgBasket) {
 }
 
 // --------------------- Collect Images --------------------- //
-
 async function collectImages(search, path) {
   let imgPaths;
   switch (search) {
@@ -74,7 +77,7 @@ function loadImagesFromPaths(paths) {
       loadImage(
         p,
         (res) => {
-          console.log("Loaded image");
+          console.log("Loaded Image");
           imgArray.push(res);
           i++;
           if (i == paths.length) resolve(imgArray);
@@ -125,10 +128,11 @@ function findImagesFromClass(domClassNames) {
   return null;
 }
 
+// --------------------- Slider --------------------- //
 function createParticleSlider(posX, s, e, d) {
   let slider = createSlider(s, e, d);
   slider.position(posX, height);
   slider.style("width", "200px");
-  slider.input(adjustParticles);
+  slider.input(adjustAnimation);
   return slider;
 }

@@ -1,10 +1,10 @@
 Matthew Martin - Creative Matterz
-15.09.2020
+09.10.2020
 
 Based on:
 https://codepen.io/vinsongrant/details/MKwebd
 
-The bird images do not belong to me and are just for test purposes.
+The images do not belong to me and are just for test purposes.
 
 What it does
 - Creates animation object
